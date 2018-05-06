@@ -1,4 +1,11 @@
 <?php
+/*
+ * Project:		imitation Simarty: the PHP compiled template engine
+ * File:		Smarty.php
+ * Author:		Nezumi
+ *
+ */
+
 class Smarty
 {
 	private $vars = array(); //赋值的数组
@@ -10,11 +17,14 @@ class Smarty
 	private $compie_extension = '.php';
 	
 
-	private $left_delimiter = '{';
-	private $right_delimiter = '}';
+	public $left_delimiter = '{';
+	public $right_delimiter = '}';
 
 	private $template_file = ''; //模板文件
 	private $compie_file = ''; //编译文件
+
+	public  $debug = false;  //whether debug
+	private $error_msg = ''; //error messages 
 
 	public  function __construct()
 	{
@@ -49,11 +59,36 @@ class Smarty
 		if( empty($content) ){
 			return false;
 		}
+
+		$patter = array();
+		$replacement = array();
+		$ld = preg_quote($this->left_delimiter, '/');
+		$rd = preg_quote($this->right_delimiter, '/');
+	
 		//replace variables
-		$pattern = '/'.$this->left_delimiter.'\s*\$([\w_]*?)\s*'.$this->right_delimiter.'/i';
-		$replacement = '<?php echo $this->vars["$1"] ?>';
-		$info =  preg_replace($pattern , $replacement, $content);
-		$this->write($info);
+		$pattern[] = '/'.$ld.'\s*\$([\w]+)\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
+
+		//endif
+		$pattern[] = '/'.$ld.'\s*\/if\s*'.$rd.'/';
+		$replacement[] = '<?php endif;  ?>';
+
+		$content =  preg_replace($pattern , $replacement, $content);
+
+		//relace if
+		$call_pattern1 = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
+		//为了避免/e报错,使用preg_replace_callback来代替/e
+		$content = preg_replace_callback($call_pattern1, function ($match) {
+		            return '<?php if('.$this->getVariable($match[1]).'):?>';
+		        }, $content);
+
+		//relace else if
+		$call_pattern2 = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
+		$content = preg_replace_callback($call_pattern2, function ($match) {
+		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
+		        }, $content);
+
+		$this->write($content);
 		include $this->compie_file;
 	}
 
@@ -71,9 +106,9 @@ class Smarty
 		$this->compie_file = $this->compie_dir.md5($this->template_file).$this->compie_extension;
 
 		//判断文件是否过期
-		if(!$this->expiry()) {
-			return false;
-		}
+		// if(!$this->expiry()) {
+		// 	return false;
+		// }
 
 		$handle = fopen($this->compie_file ,'w');
 		$result = fwrite($handle, $info);
@@ -94,4 +129,50 @@ class Smarty
 		}
 	}
 
+
+    /**
+     * 如果调试的话输出错误信息
+     * @param string $errMsg 
+     * @return boolean
+     */
+    public function throw_exception($errMsg)
+    {
+        if( $this->debug ){
+			$this->errorMsg = "smarty error: $errorMsg";
+        }
+		return true;
+    }
+
+    /**
+     * 处理if里面的变量
+     * @param string $errMsg 
+     * @return boolean
+     */
+    private function getVariable2($matches)
+    {
+ 		//replace variables
+		$pattern = '/\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/';
+		$replacement = '$this->vars["\\1"]';
+		$sub_result =  preg_replace($pattern , $replacement, $matches[1]);
+		$result = '<?php if('.$sub_result.'):?>';
+		return $result; 	
+    }   
+
+    /**
+     * 处理elseif里面的变量
+     * @param string $errMsg 
+     * @return boolean
+     */
+    private function getVariable($variable)
+    {
+ 		//replace variables
+		$pattern = '/\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/';
+		$replacement = '$this->vars["\\1"]';
+		return preg_replace($pattern , $replacement, $variable);
+    } 
+
+
+
 }
+
+
