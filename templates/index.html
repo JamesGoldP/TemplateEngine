@@ -1,4 +1,4 @@
-{include file="head.html"}
+{include file='head'}
 	{$name}
 	<div>
 	{if $code == 1}
@@ -6,7 +6,6 @@
 	{else}
 	{/if}
 	{foreach $data as $key=>$value}
-	{$value}
+	{$value['name']}
 	{/foreach}
-</body>
-</html>
+{include file="footer"}

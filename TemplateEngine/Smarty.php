@@ -25,6 +25,7 @@ class Smarty
 
 	public  $debug = false;  //whether debug
 	private $error_msg = ''; //error messages 
+	private $var_reg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 	public  function __construct()
 	{
@@ -64,26 +65,14 @@ class Smarty
 		$replacement = array();
 		$ld = preg_quote($this->left_delimiter, '/');
 		$rd = preg_quote($this->right_delimiter, '/');
-		
+		$var_reg = $this->var_reg;	
 
-		//relace if
-		$if_pattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
-		//为了避免/e报错,使用preg_replace_callback来代替/e
-		$content = preg_replace_callback($if_pattern, function ($match) {
-		            return '<?php if('.$this->getVariable($match[1]).'):?>';
+		//relace include e.g. 
+		$include_pattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
+		$content = preg_replace_callback($include_pattern, function ($match) {
+		            return file_get_contents($this->template_dir.$match[1].$this->template_extension);
 		        }, $content);
 
-		//relace else if
-		$elseif_pattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
-		$content = preg_replace_callback($elseif_pattern, function ($match) {
-		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
-		        }, $content);
-		
-		//relace foreach
-		$foreach_pattern = '/'.$ld.'\s*foreach\s*(\$[\w]+)\s*as(.+)\s*'.$rd.'/U';
-		$content = preg_replace_callback($foreach_pattern, function ($match) {
-		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$match[2].'):?>';
-		        }, $content);
 
 		//else
 		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
@@ -98,11 +87,40 @@ class Smarty
 		$replacement[] = '<?php endif;  ?>';
 
 		//replace variables
-		$pattern[] = '/'.$ld.'\s*\$([\w]+)\s*'.$rd.'/U';
+		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
+
+		//replace variables
+		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\[(.+)\]\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
 
 		$content =  preg_replace($pattern , $replacement, $content);
 
+
+		//relace if
+		$if_pattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
+		//为了避免/e报错,使用preg_replace_callback来代替/e
+		$content = preg_replace_callback($if_pattern, function ($match) {
+		            return '<?php if('.$this->getVariable($match[1]).'):?>';
+		        }, $content);
+
+		//relace else if
+		$elseif_pattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
+		$content = preg_replace_callback($elseif_pattern, function ($match) {
+		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
+		        }, $content);
+		
+		//relace foreach e.g. "<{ foreach $arrs $value }>
+		$foreach_pattern = '/'.$ld.'\s*foreach\s*(\$'.$var_reg.')\s+as\s+(\$'.$var_reg.')\s*'.$rd.'/U';
+		$content = preg_replace_callback($foreach_pattern, function ($match) {
+		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'):?>';
+		        }, $content);
+
+		//relace foreach e.g. "<{ foreach $arrs $key=>$value }>
+		$foreach_pattern2 = '/'.$ld.'\s*foreach\s*(\$'.$var_reg.')\s+as\s+(\$'.$var_reg.')\s*=>\s*(\$'.$var_reg.')'.$rd.'/U';
+		$content = preg_replace_callback($foreach_pattern2, function ($match) {
+		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
+		        }, $content);
 
 
 		$this->write($content);
@@ -122,10 +140,13 @@ class Smarty
 	{
 		$this->compie_file = $this->compie_dir.md5($this->template_file).$this->compie_extension;
 
-		//判断文件是否过期
-		// if(!$this->expiry()) {
-		// 	return false;
-		// }
+		//如果不是调试的话,意思实时写入文件
+		if( !$this->debug ){
+			//判断文件是否过期
+			if(!$this->expiry()) {
+				return false;
+			}
+		}	
 
 		$handle = fopen($this->compie_file ,'w');
 		$result = fwrite($handle, $info);
@@ -168,7 +189,7 @@ class Smarty
     private function getVariable($variable)
     {
  		//replace variables
-		$pattern = '/\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/';
+		$pattern = '/\$('.$this->var_reg.')/';
 		$replacement = '$this->vars["\\1"]';
 		return preg_replace($pattern , $replacement, $variable);
     } 
