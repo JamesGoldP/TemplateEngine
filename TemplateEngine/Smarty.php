@@ -64,29 +64,46 @@ class Smarty
 		$replacement = array();
 		$ld = preg_quote($this->left_delimiter, '/');
 		$rd = preg_quote($this->right_delimiter, '/');
-	
-		//replace variables
-		$pattern[] = '/'.$ld.'\s*\$([\w]+)\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
-
-		//endif
-		$pattern[] = '/'.$ld.'\s*\/if\s*'.$rd.'/';
-		$replacement[] = '<?php endif;  ?>';
-
-		$content =  preg_replace($pattern , $replacement, $content);
+		
 
 		//relace if
-		$call_pattern1 = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
+		$if_pattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
 		//为了避免/e报错,使用preg_replace_callback来代替/e
-		$content = preg_replace_callback($call_pattern1, function ($match) {
+		$content = preg_replace_callback($if_pattern, function ($match) {
 		            return '<?php if('.$this->getVariable($match[1]).'):?>';
 		        }, $content);
 
 		//relace else if
-		$call_pattern2 = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
-		$content = preg_replace_callback($call_pattern2, function ($match) {
+		$elseif_pattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
+		$content = preg_replace_callback($elseif_pattern, function ($match) {
 		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
 		        }, $content);
+		
+		//relace foreach
+		$foreach_pattern = '/'.$ld.'\s*foreach\s*(\$[\w]+)\s*as(.+)\s*'.$rd.'/U';
+		$content = preg_replace_callback($foreach_pattern, function ($match) {
+		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$match[2].'):?>';
+		        }, $content);
+
+		//else
+		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
+		$replacement[] = '<?php else:  ?>';
+
+		//endif
+		$pattern[] = '/'.$ld.'\s*\/foreach\s*'.$rd.'/';
+		$replacement[] = '<?php endforeach;  ?>';
+
+		//endforeach
+		$pattern[] = '/'.$ld.'\s*\/if\s*'.$rd.'/';
+		$replacement[] = '<?php endif;  ?>';
+
+		//replace variables
+		$pattern[] = '/'.$ld.'\s*\$([\w]+)\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
+
+		$content =  preg_replace($pattern , $replacement, $content);
+
+
 
 		$this->write($content);
 		include $this->compie_file;
@@ -144,21 +161,6 @@ class Smarty
     }
 
     /**
-     * 处理if里面的变量
-     * @param string $errMsg 
-     * @return boolean
-     */
-    private function getVariable2($matches)
-    {
- 		//replace variables
-		$pattern = '/\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/';
-		$replacement = '$this->vars["\\1"]';
-		$sub_result =  preg_replace($pattern , $replacement, $matches[1]);
-		$result = '<?php if('.$sub_result.'):?>';
-		return $result; 	
-    }   
-
-    /**
      * 处理elseif里面的变量
      * @param string $errMsg 
      * @return boolean
@@ -172,7 +174,4 @@ class Smarty
     } 
 
 
-
 }
-
-
