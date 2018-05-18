@@ -1,5 +1,5 @@
 <?php
-include './TemplateEngine/Smarty.php';
+include './TemplateEngine/Template.php';
 
 define('APP',__DIR__.DIRECTORY_SEPARATOR);
 $template_dir = APP.'templates'.DIRECTORY_SEPARATOR;
@@ -12,7 +12,7 @@ $data = array(
 	array('name'=>'JameGold'),
 );
 
-$smarty = new Smarty();
+$smarty = new Template();
 $smarty->debug = true;  //开启调试
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);

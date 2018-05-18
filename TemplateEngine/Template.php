@@ -6,7 +6,7 @@
  *
  */
 
-class Smarty
+class Template
 {
 	private $vars = array(); //赋值的数组
 
