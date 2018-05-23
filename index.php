@@ -1,10 +1,10 @@
 <?php
-include './TemplateEngine/Template.php';
+require './src/TemplateEngine.php';
 
-define('APP',__DIR__.DIRECTORY_SEPARATOR);
-$template_dir = APP.'templates'.DIRECTORY_SEPARATOR;
-$compie_dir = APP.'templates_c'.DIRECTORY_SEPARATOR;
-
+define('DC', DIRECTORY_SEPARATOR);
+define('APP',__DIR__.DC);
+$template_dir = APP.'templates'.DC;
+$compie_dir = APP.'templates_c'.DC;
 
 $data = array(
 	array('name'=>'Nezumi'),
@@ -12,8 +12,8 @@ $data = array(
 	array('name'=>'JameGold'),
 );
 
-$smarty = new Template();
-$smarty->debug = true;  //开启调试
+$smarty = new TemplateEngine\TemplateEngine();
+$smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
 $smarty->assign('name', 'Nezumi');

@@ -6,7 +6,9 @@
  *
  */
 
-class Template
+namespace TemplateEngine; 
+
+class TemplateEngine
 {
 	private $vars = array(); //赋值的数组
 

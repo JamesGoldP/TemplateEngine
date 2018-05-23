@@ -1,0 +1,20 @@
+{
+    "name": "yilongpeng/template-engine",
+    "description": "A php template engine",
+    "require": {
+		"php": ">=5.6"
+    },
+    "authors": [
+        {
+            "name": "Yilong Peng",
+            "homepage": "https://github.com/YilongPeng",
+            "email": "948800401@qq.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TemplateEngine\\": "src/"
+        }
+    }
+}
