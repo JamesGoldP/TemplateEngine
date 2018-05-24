@@ -1,7 +1,7 @@
 <?php
 /*
  * Project:		imitation Simarty: the PHP compiled template engine
- * File:		Smarty.php
+ * File:		TemplateEngine.php
  * Author:		Nezumi
  *
  */
