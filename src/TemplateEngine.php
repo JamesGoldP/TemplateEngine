@@ -6,7 +6,7 @@
  *
  */
 
-namespace TemplateEngine; 
+namespace yilongpeng; 
 
 class TemplateEngine
 {

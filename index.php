@@ -12,7 +12,7 @@ $data = array(
 	array('name'=>'JameGold'),
 );
 
-$smarty = new TemplateEngine\TemplateEngine();
+$smarty = new yilongpeng\TemplateEngine();
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
