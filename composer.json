@@ -1,20 +1,20 @@
 {
-    "name": "yilongpeng/template-engine",
-    "description": "A php template engine",
+    "name": "nezumi/template-engine",
+    "description": "A template engine for php",
     "require": {
 		"php": ">=5.4"
     },
     "authors": [
         {
-            "name": "Yilong Peng",
-            "homepage": "https://github.com/YilongPeng",
+            "name": "Peng Yilong",
+            "homepage": "https://github.com/PengYilong",
             "email": "948800401@qq.com",
             "role": "Developer"
         }
     ],
     "autoload": {
         "psr-4": {
-            "yilongpeng\\": "src/"
+            "Nezumi\\": "src/"
         }
     }
 }

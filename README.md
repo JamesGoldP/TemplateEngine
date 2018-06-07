@@ -3,22 +3,19 @@ Template Engine
 
 A template engine for php.
 
-[![Latest Stable Version](https://poser.pugx.org/yilongpeng/template-engine/v/stable)](https://packagist.org/packages/yilongpeng/template-engine)
-
-
 
 ## Installation
 
-Use [composer](http://getcomposer.org) to install yilongpeng/mysql in your project:
+Use [composer](http://getcomposer.org) to install nezumi/template-engine in your project:
 
 ```
-composer require yilongpeng/template-engine
+composer require nezumi/template-engine
 ```
 
 ## Usage
 
 ```php
-use yilongpeng\TemplateEngine;
+use Nezumi\TemplateEngine;
 
 define('DC', DIRECTORY_SEPARATOR);
 define('APP_PATH',__DIR__.DC);

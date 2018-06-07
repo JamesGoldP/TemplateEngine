@@ -1,2 +1,4 @@
-template_c
-templates_c
+/templates_c
+.php_cs.cache
+/vendor
+.DS_Store

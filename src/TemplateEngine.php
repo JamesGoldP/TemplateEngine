@@ -6,7 +6,7 @@
  *
  */
 
-namespace yilongpeng; 
+namespace Nezumi; 
 
 class TemplateEngine
 {
@@ -160,7 +160,7 @@ class TemplateEngine
 	}
 
 	/**
-	 * 文件是否过期
+	 * The file whether is expiry 
 	 */
 	private function expiry()
 	{
@@ -174,7 +174,7 @@ class TemplateEngine
 
 
     /**
-     * 如果调试的话输出错误信息
+     * get errors if debug on
      * @param string $errMsg 
      * @return boolean
      */
