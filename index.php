@@ -16,6 +16,7 @@ $data = array(
 );
 
 $smarty = new TemplateEngine();
+
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
