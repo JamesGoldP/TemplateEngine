@@ -75,7 +75,6 @@ class TemplateEngine
 		            return file_get_contents($this->template_dir.$match[1].$this->template_extension);
 		        }, $content);
 
-
 		//else
 		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
 		$replacement[] = '<?php else:  ?>';
@@ -92,9 +91,13 @@ class TemplateEngine
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
 
-		//replace variables
+		//replace array
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\[(.+)\]\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
+		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
+
+		//replace array for smarty
+		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
 
 		$content =  preg_replace($pattern , $replacement, $content);
 
