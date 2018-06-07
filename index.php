@@ -1,5 +1,8 @@
 <?php
-require './src/TemplateEngine.php';
+include './Loader.php';
+spl_autoload_register('Loader::_autoload');
+
+use Nezumi\TemplateEngine; 
 
 define('DC', DIRECTORY_SEPARATOR);
 define('APP',__DIR__.DC);
@@ -12,7 +15,7 @@ $data = array(
 	array('name'=>'JameGold'),
 );
 
-$smarty = new TemplateEngine\TemplateEngine();
+$smarty = new TemplateEngine();
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
