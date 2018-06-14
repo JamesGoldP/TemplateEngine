@@ -8,7 +8,7 @@
 
 namespace Nezumi; 
 
-class TemplateEngine
+class MySmarty
 {
 	private $vars = array(); //赋值的数组
 
@@ -54,7 +54,7 @@ class TemplateEngine
 	public function display($file)
 	{
 
-		$this->template_file = $this->template_dir.$file.$this->template_extension;
+		$this->template_file = $this->template_dir.$file;
 		if( !file_exists($this->template_file) ){
 			return false;
 		}
@@ -72,9 +72,8 @@ class TemplateEngine
 		//relace include e.g. 
 		$include_pattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
 		$content = preg_replace_callback($include_pattern, function ($match) {
-		            return file_get_contents($this->template_dir.$match[1].$this->template_extension);
+		            return file_get_contents($this->template_dir.$match[1]);
 		        }, $content);
-
 
 		//else
 		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
@@ -92,9 +91,13 @@ class TemplateEngine
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
 
-		//replace variables
+		//replace array
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\[(.+)\]\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
+
+		//replace array for smarty
+		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
 
 		$content =  preg_replace($pattern , $replacement, $content);
 

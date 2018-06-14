@@ -15,19 +15,29 @@ composer require nezumi/template-engine
 ## Usage
 
 ```php
-use Nezumi\TemplateEngine;
+use Nezumi\MySmarty; 
 
 define('DC', DIRECTORY_SEPARATOR);
-define('APP_PATH',__DIR__.DC);
-$template_dir = APP_PATH.'templates'.DC;
-$compie_dir = APP_PATH.'templates_c'.DC;
+define('APP',__DIR__.DC);
+$template_dir = APP.'templates'.DC;
+$compie_dir = APP.'templates_c'.DC;
 
-$smarty = new TemplateEngine();
+$data = array(
+	array('name'=>'Nezumi'),
+	array('name'=>'Jimmy'),
+	array('name'=>'JameGold'),
+);
+
+$smarty = new MySmarty();
+
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
 $smarty->assign('name', 'Nezumi');
-$smarty->display('index');
+$smarty->assign('title', 'HelloWorld');
+$smarty->assign('code', 1);
+$smarty->assign('data', $data);
+$smarty->display('index.html');
 ```
 
 

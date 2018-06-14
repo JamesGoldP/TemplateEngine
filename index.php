@@ -2,7 +2,7 @@
 include './Loader.php';
 spl_autoload_register('Loader::_autoload');
 
-use Nezumi\TemplateEngine; 
+use Nezumi\MySmarty; 
 
 define('DC', DIRECTORY_SEPARATOR);
 define('APP',__DIR__.DC);
@@ -15,7 +15,7 @@ $data = array(
 	array('name'=>'JameGold'),
 );
 
-$smarty = new TemplateEngine();
+$smarty = new MySmarty();
 
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
@@ -24,4 +24,4 @@ $smarty->assign('name', 'Nezumi');
 $smarty->assign('title', 'HelloWorld');
 $smarty->assign('code', 1);
 $smarty->assign('data', $data);
-$smarty->display('index');
+$smarty->display('index.html');

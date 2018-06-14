@@ -1,12 +1,12 @@
 {
-    "name": "nezumi/template-engine",
-    "description": "A template engine for php",
+    "name": "nezumi/mysmarty",
+    "description": "A template engine which imitate smarty for php",
     "require": {
 		"php": ">=5.4"
     },
     "authors": [
         {
-            "name": "Peng Yilong",
+            "name": "Yilong Peng",
             "homepage": "https://github.com/PengYilong",
             "email": "948800401@qq.com",
             "role": "Developer"
