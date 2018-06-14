@@ -93,7 +93,11 @@ class MySmarty
 
 		//replace array
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\[(.+)\]\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
+		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
+
+		//replace array for smarty
+		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
+		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
 
 		//replace array for smarty
 		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
