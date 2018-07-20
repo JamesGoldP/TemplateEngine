@@ -51,6 +51,15 @@ class MySmarty
 		$this->compie_dir = $dir; 
 	}
 
+	public function fetch($file)
+	{
+		ob_start();
+		$this->display($file);
+		$contents = ob_get_contents();
+		ob_end_clean();
+		return $contents;
+	}
+
 	public function display($file)
 	{
 
