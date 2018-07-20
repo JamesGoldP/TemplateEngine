@@ -6,10 +6,10 @@ A template engine for php.
 
 ## Installation
 
-Use [composer](http://getcomposer.org) to install nezumi/template-engine in your project:
+Use [composer](http://getcomposer.org) to install nezumi/mysmarty in your project:
 
 ```
-composer require nezumi/template-engine
+composer require nezumi/mysmarty
 ```
 
 ## Usage
