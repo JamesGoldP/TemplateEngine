@@ -2,6 +2,7 @@
     "name": "nezimi/my-smarty",
     "minimum-stability": "dev",
     "description": "A template engine which imitate smarty for php",
+    "type":"library",
     "require": {
 		"php": ">=5.4"
     },

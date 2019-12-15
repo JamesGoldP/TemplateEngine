@@ -1,29 +1,22 @@
 <?php
-/*
- * Project:		imitation Simarty: the PHP compiled template engine
- * File:		TemplateEngine.php
- * Author:		Nezimi
- *
- */
-
 namespace Nezimi; 
 
 class MySmarty
 {
 	private $vars = []; //赋值的数组
 
-	private $template_dir = ''; //模板存放的路径
-	private $template_extension = '.html';
+	public $template_dir = 'templates';  
+	public $template_extension = '.html';
 
-	private $compie_dir = '';  //编译目录 
-	private $compie_extension = '.php';
+	public $compie_dir = 'templates_c';   
+	public $compie_extension = '.php';
 	
 
 	public $left_delimiter = '{';
 	public $right_delimiter = '}';
 
-	private $template_file = ''; //模板文件
-	private $compie_file = ''; //编译文件
+	private $template_file = ''; 
+	private $compie_file = '';  
 
 	public  $debug = false;  //whether debug
 	private $error_msg = ''; //error messages 
@@ -70,12 +63,20 @@ class MySmarty
 		if( empty($content) ){
 			return false;
 		}
+		$content = $this->compileFile($content);
+		$this->write($content);
+		include $this->compie_file;
+	}
 
-		$patter = array();
-		$replacement = array();
+	public function compileFile($content)
+	{
+		$patter = [];
+		$replacement = [];
 		$ld = preg_quote($this->left_delimiter, '/');
 		$rd = preg_quote($this->right_delimiter, '/');
 		$var_reg = $this->var_reg;	
+
+		//Gather all template tags
 
 		//relace include e.g. 
 		$include_pattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
@@ -138,9 +139,7 @@ class MySmarty
 		$content = preg_replace_callback($foreach_pattern2, function ($match) {
 		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
 		        }, $content);
-
-		$this->write($content);
-		include $this->compie_file;
+		return $content;
 	}
 
 	private function read()
@@ -158,7 +157,7 @@ class MySmarty
 
 		//如果不是调试的话,意思实时写入文件
 		if( !$this->debug ){
-			//判断文件是否过期
+			//whether expiry
 			if(!$this->expiry()) {
 				return false;
 			}
