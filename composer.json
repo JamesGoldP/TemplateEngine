@@ -1,5 +1,6 @@
 {
-    "name": "nezumi/mysmarty",
+    "name": "nezimi/my-smarty",
+    "minimum-stability": "dev",
     "description": "A template engine which imitate smarty for php",
     "require": {
 		"php": ">=5.4"
@@ -7,14 +8,16 @@
     "authors": [
         {
             "name": "Yilong Peng",
-            "homepage": "https://github.com/PengYilong",
             "email": "948800401@qq.com",
             "role": "Developer"
         }
     ],
     "autoload": {
         "psr-4": {
-            "Nezumi\\": "src/"
+            "Nezimi\\": "src/"
         }
+    },
+    "require-dev": {
+        "nezimi/my-functions": "dev-master"
     }
 }

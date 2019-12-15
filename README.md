@@ -6,16 +6,16 @@ A template engine for php.
 
 ## Installation
 
-Use [composer](http://getcomposer.org) to install nezumi/mysmarty in your project:
+Use [composer](http://getcomposer.org) to install Nezimi/mysmarty in your project:
 
 ```
-composer require nezumi/mysmarty
+composer require Nezimi/my-smarty
 ```
 
 ## Usage
 
 ```php
-use Nezumi\MySmarty; 
+use Nezimi\MySmarty; 
 
 define('DC', DIRECTORY_SEPARATOR);
 define('APP',__DIR__.DC);
@@ -23,7 +23,7 @@ $template_dir = APP.'templates'.DC;
 $compie_dir = APP.'templates_c'.DC;
 
 $data = array(
-	array('name'=>'Nezumi'),
+	array('name'=>'Nezimi'),
 	array('name'=>'Jimmy'),
 	array('name'=>'JameGold'),
 );
@@ -33,7 +33,7 @@ $smarty = new MySmarty();
 $smarty->debug = true;  //the debug enable
 $smarty->setTemplateDir($template_dir);
 $smarty->setCompileDir($compie_dir);
-$smarty->assign('name', 'Nezumi');
+$smarty->assign('name', 'Nezimi');
 $smarty->assign('title', 'HelloWorld');
 $smarty->assign('code', 1);
 $smarty->assign('data', $data);

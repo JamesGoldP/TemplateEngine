@@ -2,15 +2,15 @@
 /*
  * Project:		imitation Simarty: the PHP compiled template engine
  * File:		TemplateEngine.php
- * Author:		Nezumi
+ * Author:		Nezimi
  *
  */
 
-namespace Nezumi; 
+namespace Nezimi; 
 
 class MySmarty
 {
-	private $vars = array(); //赋值的数组
+	private $vars = []; //赋值的数组
 
 	private $template_dir = ''; //模板存放的路径
 	private $template_extension = '.html';
@@ -62,7 +62,6 @@ class MySmarty
 
 	public function display($file)
 	{
-
 		$this->template_file = $this->template_dir.$file;
 		if( !file_exists($this->template_file) ){
 			return false;
@@ -140,7 +139,6 @@ class MySmarty
 		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
 		        }, $content);
 
-
 		$this->write($content);
 		include $this->compie_file;
 	}
@@ -211,6 +209,5 @@ class MySmarty
 		$replacement = '$this->vars["\\1"]';
 		return preg_replace($pattern , $replacement, $variable);
     } 
-
 
 }
