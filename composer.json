@@ -1,5 +1,5 @@
 {
-    "name": "nezimi/my-smarty",
+    "name": "nezimi/my-template",
     "minimum-stability": "dev",
     "description": "A template engine which imitate smarty for php",
     "type":"library",

@@ -18,8 +18,6 @@ $data = [
 $smarty = new MySmarty();
 
 $smarty->debug = true;  //the debug enable
-$smarty->setTemplateDir($template_dir);
-$smarty->setCompileDir($compie_dir);
 $smarty->assign('name', 'Nezimi');
 $smarty->assign('title', 'HelloWorld');
 $smarty->assign('code', 1);

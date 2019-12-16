@@ -1,47 +1,55 @@
 <?php
 namespace Nezimi; 
 
-class MySmarty
+class Template
 {
-	private $vars = []; //赋值的数组
+	/**
+	 * 赋值的数组
+	 * @var array
+	 */
+	protected $vars = []; 
 
-	public $template_dir = 'templates';  
-	public $template_extension = '.html';
+	/**
+	 * 模板路径
+	 * @var string
+	 */
+	protected $templateDir;  
+	protected $compileDir;   
 
-	public $compie_dir = 'templates_c';   
-	public $compie_extension = '.php';
-	
+	/**
+	 * 
+	 */
+	protected $leftDelimiter;
+	protected $rightDelimiter;
 
-	public $left_delimiter = '{';
-	public $right_delimiter = '}';
+	/**
+	 * @var string
+	 */
+	protected $templateFile; 
 
-	private $template_file = ''; 
-	private $compie_file = '';  
+	/**
+	 * whether debug
+	 * @var bool
+	 */
+	protected $debug = true; 
 
-	public  $debug = false;  //whether debug
-	private $error_msg = ''; //error messages 
-	private $var_reg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
+	/**
+	 * error messages 
+	 */
+	private $varReg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
-	public  function __construct()
+	public  function __construct($templateDir, $compileDir, array $config = [])
 	{
+		$this->templateDir = $templateDir;
+		$this->compileDir  = $compileDir;
+		$this->leftDelimiter = $config['left_delimiter'];
+		$this->rightDelimiter = $config['right_delimiter'];
+		$this->config = $config;
 	}
 
 	public function assign($key, $value)
 	{
 		$this->vars[$key] = $value; 
-	}
-
-	public function setTemplateDir($dir)
-	{
-		$this->template_dir = $dir; 
-	}
-
-	public function setCompileDir($dir)
-	{
-		if( !is_dir($dir) ){
-			mkdir($dir, 0777, TRUE);
-		}
-		$this->compie_dir = $dir; 
 	}
 
 	public function fetch($file)
@@ -55,8 +63,8 @@ class MySmarty
 
 	public function display($file)
 	{
-		$this->template_file = $this->template_dir.$file;
-		if( !file_exists($this->template_file) ){
+		$this->templateFile = $this->templateDir . $file . '.' .$this->config['template_suffix'];
+		if( !file_exists($this->templateFile) ){
 			return false;
 		}
 		$content = $this->read();
@@ -65,23 +73,23 @@ class MySmarty
 		}
 		$content = $this->compileFile($content);
 		$this->write($content);
-		include $this->compie_file;
+		include $this->compileFile;
 	}
 
 	public function compileFile($content)
 	{
 		$patter = [];
 		$replacement = [];
-		$ld = preg_quote($this->left_delimiter, '/');
-		$rd = preg_quote($this->right_delimiter, '/');
-		$var_reg = $this->var_reg;	
+		$ld = preg_quote($this->leftDelimiter, '/');
+		$rd = preg_quote($this->rightDelimiter, '/');
+		$varReg = $this->varReg;	
 
 		//Gather all template tags
 
 		//relace include e.g. 
-		$include_pattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
-		$content = preg_replace_callback($include_pattern, function ($match) {
-		            return file_get_contents($this->template_dir.$match[1]);
+		$includePattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
+		$content = preg_replace_callback($includePattern, function ($match) {
+		            return file_get_contents($this->templateDir.$match[1]);
 		        }, $content);
 
 		//else
@@ -97,46 +105,46 @@ class MySmarty
 		$replacement[] = '<?php endif;  ?>';
 
 		//replace variables
-		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\s*'.$rd.'/U';
+		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
 
 		//replace array
-		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\[(.+)\]\s*'.$rd.'/U';
+		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\[(.+)\]\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
 
 		//replace array for smarty
-		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
+		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\.('.$varReg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
 
 		//replace array for smarty
-		$pattern[] = '/'.$ld.'\s*\$('.$var_reg.')\.('.$var_reg.')\s*'.$rd.'/U';
+		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\.('.$varReg.')\s*'.$rd.'/U';
 		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
 
 		$content =  preg_replace($pattern , $replacement, $content);
 
 
 		//relace if
-		$if_pattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
+		$ifPattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
 		//为了避免/e报错,使用preg_replace_callback来代替/e
-		$content = preg_replace_callback($if_pattern, function ($match) {
+		$content = preg_replace_callback($ifPattern, function ($match) {
 		            return '<?php if('.$this->getVariable($match[1]).'):?>';
 		        }, $content);
 
 		//relace else if
-		$elseif_pattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
-		$content = preg_replace_callback($elseif_pattern, function ($match) {
+		$elseifPattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
+		$content = preg_replace_callback($elseifPattern, function ($match) {
 		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
 		        }, $content);
 		
 		//relace foreach e.g. "<{ foreach $arrs $value }>
-		$foreach_pattern = '/'.$ld.'\s*foreach\s*(\$'.$var_reg.')\s+as\s+(\$'.$var_reg.')\s*'.$rd.'/U';
-		$content = preg_replace_callback($foreach_pattern, function ($match) {
+		$foreachPattern = '/'.$ld.'\s*foreach\s*(\$'.$varReg.')\s+as\s+(\$'.$varReg.')\s*'.$rd.'/U';
+		$content = preg_replace_callback($foreachPattern, function ($match) {
 		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'):?>';
 		        }, $content);
 
 		//relace foreach e.g. "<{ foreach $arrs $key=>$value }>
-		$foreach_pattern2 = '/'.$ld.'\s*foreach\s*(\$'.$var_reg.')\s+as\s+(\$'.$var_reg.')\s*=>\s*(\$'.$var_reg.')'.$rd.'/U';
-		$content = preg_replace_callback($foreach_pattern2, function ($match) {
+		$foreachPattern2 = '/'.$ld.'\s*foreach\s*(\$'.$varReg.')\s+as\s+(\$'.$varReg.')\s*=>\s*(\$'.$varReg.')'.$rd.'/U';
+		$content = preg_replace_callback($foreachPattern2, function ($match) {
 		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
 		        }, $content);
 		return $content;
@@ -144,8 +152,8 @@ class MySmarty
 
 	private function read()
 	{
-		$handle = fopen($this->template_file ,'r');
-		$result = fread($handle, filesize($this->template_file));
+		$handle = fopen($this->templateFile ,'r');
+		$result = fread($handle, filesize($this->templateFile));
 		fclose($handle);
 		// $result = file_get_contents($file);
 		return $result;	
@@ -153,8 +161,10 @@ class MySmarty
 
 	private function write($info)
 	{
-		$this->compie_file = $this->compie_dir.md5($this->template_file).$this->compie_extension;
-
+		if( !is_dir($this->compileDir) ) {
+			mkdir($this->compileDir);
+		}
+		$this->compileFile = $this->compileDir . md5($this->templateFile). '.' .$this->config['compile_extension'];
 		//如果不是调试的话,意思实时写入文件
 		if( !$this->debug ){
 			//whether expiry
@@ -163,7 +173,7 @@ class MySmarty
 			}
 		}	
 
-		$handle = fopen($this->compie_file ,'w');
+		$handle = fopen($this->compileFile ,'w');
 		$result = fwrite($handle, $info);
 		fclose($handle);
 		// $result = file_put_contents();
@@ -175,20 +185,19 @@ class MySmarty
 	private function expiry()
 	{
 		//如果模板文件的修改时间大于被编译的文件修改时间就是过期了
-		if(filemtime($this->template_file)>filemtime($this->compie_file)){
+		if( filemtime($this->templateFile)>filemtime($this->compileFile) ){
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-
     /**
      * get errors if debug on
      * @param string $errMsg 
      * @return boolean
      */
-    public function throw_exception($errMsg)
+    public function throwException($errMsg)
     {
         if( $this->debug ){
 			$this->errorMsg = "smarty error: $errorMsg";
@@ -204,7 +213,7 @@ class MySmarty
     private function getVariable($variable)
     {
  		//replace variables
-		$pattern = '/\$('.$this->var_reg.')/';
+		$pattern = '/\$('.$this->varReg.')/';
 		$replacement = '$this->vars["\\1"]';
 		return preg_replace($pattern , $replacement, $variable);
     } 
