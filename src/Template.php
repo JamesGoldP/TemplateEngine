@@ -1,5 +1,7 @@
 <?php
-namespace Nezimi; 
+namespace Nezimi;
+
+use Exception;
 
 class Template
 {
@@ -34,6 +36,11 @@ class Template
 	protected $debug = true; 
 
 	/**
+	 * 
+	 */
+	protected $storage;
+
+	/**
 	 * error messages 
 	 */
 	private $varReg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
@@ -42,9 +49,14 @@ class Template
 	{
 		$this->templateDir = $templateDir;
 		$this->compileDir  = $compileDir;
-		$this->leftDelimiter = $config['left_delimiter'];
-		$this->rightDelimiter = $config['right_delimiter'];
+		$this->leftDelimiter = preg_quote($config['left_delimiter'], '/');
+		$this->rightDelimiter = preg_quote($config['right_delimiter'], '/');
 		$this->config = $config;
+
+		//初始化模板编译存储器
+		$type = $this->config['compile_type'] ?: 'file';
+		$class = false !== strpos('\\', $type) ? $type : 'Nezimi\\driver\\' . ucwords($type);
+		$this->storage = new $class;
 	}
 
 	public function assign($key, $value)
@@ -52,46 +64,162 @@ class Template
 		$this->vars[$key] = $value; 
 	}
 
-	public function fetch($file)
-	{
-		ob_start();
-		$this->display($file);
-		$contents = ob_get_contents();
-		ob_end_clean();
-		return $contents;
-	}
-
-	public function display($file)
+	public function fetch(string $file)
 	{
 		$this->templateFile = $this->templateDir . $file . '.' .$this->config['template_suffix'];
 		if( !file_exists($this->templateFile) ){
 			return false;
 		}
-		$content = $this->read();
+		$content = $this->read($this->templateFile);
+		$this->compileFile = $this->compileDir . md5($this->templateFile). '.' .$this->config['compile_extension'];
+
+		//如果不是调试的话,意思实时写入文件
+		if( !$this->debug ){
+			//whether expiry
+			if(!$this->expiry()) {
+				return false;
+			}
+		}	
+
+		$content = $this->compile($content, $this->compileFile);
+		$this->storage->write($this->compileFile, $content);
+		ob_start();
+		$this->storage->read($this->compileFile, $this->vars);
+		$contents = ob_get_contents();
+		ob_end_clean();
+		return $contents;
+	}
+
+	public function display($content)
+	{
+		
+	}
+
+	/**
+	 * 
+	 */
+	public function compile(string $content): string
+	{
+		return $this->parse($content);
+	}
+
+	public function parse(string $content): string
+	{
 		if( empty($content) ){
 			return false;
 		}
-		$content = $this->compileFile($content);
-		$this->write($content);
-		include $this->compileFile;
+		//Gather all template tags
+		$this->parseLiteral($content);
+		$this->parseExtend($content);
+		$this->parseLayout($content);
+		//relace include tag 
+		$this->parseInclude($content);
+		//替换包含文件中的literal tag
+		$this->parseLiteral($content);
+		$this->parsePhp($content);	
+		$this->parseTag($content);
+		$this->parseTagLib($content);
+		//还原literal内容	
+		$this->parseLiteral($content);		
+		return $content;
 	}
 
-	public function compileFile($content)
+	public function read(string $file)
+	{
+		$handle = fopen($file, 'r');
+		$result = fread($handle, filesize($file));
+		fclose($handle);
+		// $result = file_get_contents($file);
+		return $result;	
+	}
+
+	public function parseLiteral(string $content, bool $resotre = false): void
+	{
+
+	}
+
+	public function parseExtend(string &$content): void
+	{
+
+	}
+
+	public function parsePhp(string &$content): void
+	{
+
+	}
+
+	public function parseLayout(string &$content): void
+	{
+
+	}
+
+	public function parseInclude(string &$content): void
+	{
+		$regex = $this->getRegex('include');
+		$content = preg_replace_callback($regex, function ($match) {
+		            return file_get_contents($this->templateDir.$match[1]. '.' .$this->config['template_suffix']);
+				}, $content);
+	}
+
+	public function parseTag(string &$content): void
+	{
+		$regex = $this->getRegex('tag');
+		
+		if( preg_match_all($regex, $content, $matches, PREG_SET_ORDER) ){
+			foreach($matches as $value){
+				$str = $value[1];
+				$flag = substr($str, 0, 1);
+				//match array
+				$this->parseVar($str);
+				$this->parseVarFunction($str);
+				$str = '<?php echo '.$str.' ?>';
+				$content = str_replace($value[0], $str, $content);
+			}
+		}
+	}
+
+	public function parseVar(string &$varStr): void
+	{
+		$regex = '/\s*\$'.$this->varReg.'(\.\w+)+\s*/isU';
+		if( preg_match_all($regex, $varStr, $matches, PREG_OFFSET_CAPTURE) ){
+			p($matches);
+		}
+	}
+
+	public function parseVarFunction(string &$varStr)
+	{
+		if( !strpos($varStr, '|') ){
+			return ;
+		}
+		$varArray = explode('|', $varStr);
+		$name = array_shift($varArray);
+		foreach($varArray as $key=>$value){
+			$args = explode('=', $value);
+			$func = $args[0];
+			switch($func){
+				case 'default':
+					$varStr = $name . ' ?? ' . $args[1];
+				break;
+				default:
+					if( isset($args[1]) ){
+						$varStr = "$func($name, $args[1])";
+					} else {
+						//可以使用php的函数
+						if( !empty($args[0]) ){
+							$varStr = "$func($name)";
+						}
+					}
+			}
+		}
+	}
+
+	public function parseTagLib(string &$content): void
 	{
 		$patter = [];
 		$replacement = [];
-		$ld = preg_quote($this->leftDelimiter, '/');
-		$rd = preg_quote($this->rightDelimiter, '/');
+		$ld = $this->leftDelimiter;
+		$rd = $this->rightDelimiter;
 		$varReg = $this->varReg;	
-
-		//Gather all template tags
-
-		//relace include e.g. 
-		$includePattern = '/'.$ld.'include\s+file=[\'\"](.+)[\'\"]'.$rd.'/U';
-		$content = preg_replace_callback($includePattern, function ($match) {
-		            return file_get_contents($this->templateDir.$match[1]);
-		        }, $content);
-
 		//else
 		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
 		$replacement[] = '<?php else:  ?>';
@@ -104,24 +232,7 @@ class Template
 		$pattern[] = '/'.$ld.'\s*\/if\s*'.$rd.'/';
 		$replacement[] = '<?php endif;  ?>';
 
-		//replace variables
-		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"] ?>';
-
-		//replace array
-		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\[(.+)\]\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"][\\2] ?>';
-
-		//replace array for smarty
-		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\.('.$varReg.')\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
-
-		//replace array for smarty
-		$pattern[] = '/'.$ld.'\s*\$('.$varReg.')\.('.$varReg.')\s*'.$rd.'/U';
-		$replacement[] = '<?php echo $this->vars["\\1"]["\\2"] ?>';
-
 		$content =  preg_replace($pattern , $replacement, $content);
-
 
 		//relace if
 		$ifPattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
@@ -147,36 +258,19 @@ class Template
 		$content = preg_replace_callback($foreachPattern2, function ($match) {
 		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
 		        }, $content);
-		return $content;
 	}
 
-	private function read()
+	public function getRegex(string $tagName): string
 	{
-		$handle = fopen($this->templateFile ,'r');
-		$result = fread($handle, filesize($this->templateFile));
-		fclose($handle);
-		// $result = file_get_contents($file);
-		return $result;	
-	}
-
-	private function write($info)
-	{
-		if( !is_dir($this->compileDir) ) {
-			mkdir($this->compileDir);
+		switch($tagName){
+			case 'tag':
+				$regex = '(\s*\$.+\s*)';
+			break;
+			case 'include':
+				$regex = 'include.+file=[\'\"](.+)[\'\"]';
+			break;
 		}
-		$this->compileFile = $this->compileDir . md5($this->templateFile). '.' .$this->config['compile_extension'];
-		//如果不是调试的话,意思实时写入文件
-		if( !$this->debug ){
-			//whether expiry
-			if(!$this->expiry()) {
-				return false;
-			}
-		}	
-
-		$handle = fopen($this->compileFile ,'w');
-		$result = fwrite($handle, $info);
-		fclose($handle);
-		// $result = file_put_contents();
+		return '/' . $this->leftDelimiter . $regex . $this->rightDelimiter . '/isU';
 	}
 
 	/**
