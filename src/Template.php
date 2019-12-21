@@ -40,11 +40,6 @@ class Template
 	 */
 	protected $storage;
 
-	/**
-	 * error messages 
-	 */
-	private $varReg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
-
 	public  function __construct($templateDir, $compileDir, array $config = [])
 	{
 		$this->templateDir = $templateDir;
@@ -118,7 +113,13 @@ class Template
 		$this->parseLiteral($content);
 		$this->parsePhp($content);	
 		$this->parseTag($content);
-		$this->parseTagLib($content);
+
+		$tagLibs = explode(',', $this->config['taglib_build_in']);
+
+		foreach($tagLibs as $value){
+			$this->parseTagLib($value, $content);
+		}
+		
 		//还原literal内容	
 		$this->parseLiteral($content);		
 		return $content;
@@ -169,30 +170,55 @@ class Template
 			foreach($matches as $value){
 				$str = $value[1];
 				$flag = substr($str, 0, 1);
-				//match array
-				$this->parseVar($str);
-				$this->parseVarFunction($str);
-				$str = '<?php echo '.$str.' ?>';
+				switch($flag){
+					case '$':
+						if( strpos($str, '|') ){
+							$strArr = explode('|', $str);
+							$name = $this->parseArray(array_shift($strArr));
+							$str = $this->parseVarFunction($name, $strArr);
+						} else {
+							$str = $this->parseArray($str);	
+						}
+						$str = '<?php echo '.$str.'; ?>';
+						break;
+					case ':': //输出某个函数
+						$str = substr($str, 1);
+						$str = '<?php echo '.$str.'; ?>';
+						break;
+					case '~': //执行某个函数
+						$str = substr($str, 1);
+						$str = '<?php '.$str.'; ?>';
+						break;
+					case '/': //注释
+						$flag2 = substr($str, 1, 1);
+						if( '/' == $flag2 || ('*' == $flag2 && '*/' == substr($str, -2)) ){
+							$str = '';
+						}
+						break;
+					case '-':
+					case '+':  //计算某个函数
+						$str = '<?php echo '.$str.'; ?>';
+						break;	
+					default:
+				}
 				$content = str_replace($value[0], $str, $content);
 			}
 		}
 	}
 
-	public function parseVar(string &$varStr): void
+	public function parseArray(string $varStr): string
 	{
-		$regex = '/\s*\$'.$this->varReg.'(\.\w+)+\s*/isU';
-		if( preg_match_all($regex, $varStr, $matches, PREG_OFFSET_CAPTURE) ){
-			p($matches);
+		if( strpos($varStr, '.') ){
+			$varArray = explode('.', $varStr);	
+			$var = array_shift($varArray);
+			$varStr = $var . '["' .implode('"]["', $varArray) . '"]';
+			return $varStr;
 		}
+		return $varStr;
 	}
 
-	public function parseVarFunction(string &$varStr)
+	public function parseVarFunction(string $name, array $varArray): string
 	{
-		if( !strpos($varStr, '|') ){
-			return ;
-		}
-		$varArray = explode('|', $varStr);
-		$name = array_shift($varArray);
 		foreach($varArray as $key=>$value){
 			$args = explode('=', $value);
 			$func = $args[0];
@@ -211,66 +237,33 @@ class Template
 					}
 			}
 		}
+		return $varStr;
 	}
 
-	public function parseTagLib(string &$content): void
+	public function parseTagLib(string $tagLib, string &$content): void
 	{
-		$patter = [];
-		$replacement = [];
-		$ld = $this->leftDelimiter;
-		$rd = $this->rightDelimiter;
-		$varReg = $this->varReg;	
-		//else
-		$pattern[] = '/'.$ld.'\s*else\s*'.$rd.'/';
-		$replacement[] = '<?php else:  ?>';
-
-		//endif
-		$pattern[] = '/'.$ld.'\s*\/foreach\s*'.$rd.'/';
-		$replacement[] = '<?php endforeach;  ?>';
-
-		//endforeach
-		$pattern[] = '/'.$ld.'\s*\/if\s*'.$rd.'/';
-		$replacement[] = '<?php endif;  ?>';
-
-		$content =  preg_replace($pattern , $replacement, $content);
-
-		//relace if
-		$ifPattern = '/'.$ld.'\s*if(.+)\s*'.$rd.'/U';
-		//为了避免/e报错,使用preg_replace_callback来代替/e
-		$content = preg_replace_callback($ifPattern, function ($match) {
-		            return '<?php if('.$this->getVariable($match[1]).'):?>';
-		        }, $content);
-
-		//relace else if
-		$elseifPattern = '/'.$ld.'\s*else\s*if(.+)\s*'.$rd.'/U';
-		$content = preg_replace_callback($elseifPattern, function ($match) {
-		            return '<?php elseif('.$this->getVariable($match[1]).'):?>';
-		        }, $content);
-		
-		//relace foreach e.g. "<{ foreach $arrs $value }>
-		$foreachPattern = '/'.$ld.'\s*foreach\s*(\$'.$varReg.')\s+as\s+(\$'.$varReg.')\s*'.$rd.'/U';
-		$content = preg_replace_callback($foreachPattern, function ($match) {
-		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'):?>';
-		        }, $content);
-
-		//relace foreach e.g. "<{ foreach $arrs $key=>$value }>
-		$foreachPattern2 = '/'.$ld.'\s*foreach\s*(\$'.$varReg.')\s+as\s+(\$'.$varReg.')\s*=>\s*(\$'.$varReg.')'.$rd.'/U';
-		$content = preg_replace_callback($foreachPattern2, function ($match) {
-		            return '<?php foreach('.$this->getVariable($match[1]).' as '.$this->getVariable($match[2]).'=>'.$this->getVariable($match[3]).'):?>';
-		        }, $content);
+		if( false !== strpos($tagLib, '\\') ){
+			$className = $tagLib;
+		} else {
+			$className =  '\\Nezimi\\taglib\\'.ucwords($tagLib);
+		}
+		$tLib = new $className($this);
+		$tLib->parseTag($content);
 	}
 
 	public function getRegex(string $tagName): string
 	{
 		switch($tagName){
 			case 'tag':
-				$regex = '(\s*\$.+\s*)';
-			break;
+				$regex = '((?:\${1,2}[a-wA-w_]|[+-]{2}\$[a-wA-w_]|[\:\~][\$a-wA-w_]|\/[\*\/])[^\}]*)';
+				break;
 			case 'include':
-				$regex = 'include.+file=[\'\"](.+)[\'\"]';
-			break;
+				$name = 'file';
+				$regex = $tagName.'\s+'.$name.'=[\'\"](\w+)[\'\"]';
+				break;
 		}
-		return '/' . $this->leftDelimiter . $regex . $this->rightDelimiter . '/isU';
+		$regex = '/' . $this->leftDelimiter . $regex . $this->rightDelimiter . '/is';
+		return $regex;
 	}
 
 	/**
@@ -279,37 +272,11 @@ class Template
 	private function expiry()
 	{
 		//如果模板文件的修改时间大于被编译的文件修改时间就是过期了
-		if( filemtime($this->templateFile)>filemtime($this->compileFile) ){
+		if( filemtime($this->templateFile) > filemtime($this->compileFile) ){
 			return true;
 		} else {
 			return false;
 		}
 	}
-
-    /**
-     * get errors if debug on
-     * @param string $errMsg 
-     * @return boolean
-     */
-    public function throwException($errMsg)
-    {
-        if( $this->debug ){
-			$this->errorMsg = "smarty error: $errorMsg";
-        }
-		return true;
-    }
-
-    /**
-     * 处理elseif里面的变量
-     * @param string $errMsg 
-     * @return boolean
-     */
-    private function getVariable($variable)
-    {
- 		//replace variables
-		$pattern = '/\$('.$this->varReg.')/';
-		$replacement = '$this->vars["\\1"]';
-		return preg_replace($pattern , $replacement, $variable);
-    } 
 
 }

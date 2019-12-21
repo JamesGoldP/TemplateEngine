@@ -8,4 +8,5 @@ return [
     'template_suffix' => 'html',
     'compile_extension' => 'php',
     'compile_type' => 'file',
+    'taglib_build_in' => 'cx', //内置标签
 ];
