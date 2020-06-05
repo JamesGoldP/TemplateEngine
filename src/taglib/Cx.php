@@ -1,8 +1,8 @@
 <?php
-namespace Nezimi\taglib;
+namespace zero\taglib;
 
 use Exception;
-use Nezimi\Taglib;
+use zero\Taglib;
 
 class Cx extends TagLib
 {

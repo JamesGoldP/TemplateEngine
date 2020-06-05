@@ -1,43 +1,42 @@
-Template Engine
+Zero Template
 ===============
 
-A template engine for php.
+The studying template engine for think-template.
 
 
 ## Installation
 
-Use [composer](http://getcomposer.org) to install Nezimi/mysmarty in your project:
+Use [composer](http://getcomposer.org) to install zero/zero-template in your project:
 
 ```
-composer require Nezimi/my-smarty
+composer require zero/zero-template
 ```
 
 ## Usage
 
 ```php
-use Nezimi\MySmarty; 
+namespace zero;
 
-define('DC', DIRECTORY_SEPARATOR);
-define('APP',__DIR__.DC);
-$template_dir = APP.'templates'.DC;
-$compie_dir = APP.'templates_c'.DC;
+require __DIR__.'/vendor/autoload.php';
 
-$data = array(
-	array('name'=>'Nezimi'),
-	array('name'=>'Jimmy'),
-	array('name'=>'JameGold'),
-);
+$config = __DIR__ . '/config/template.php';
+$config['view_path'] = './templates/';
+$config['cache_path'] = './templates_c/';
 
-$smarty = new MySmarty();
+$data = [
+	['name'=>'Nezimi'],
+	['name'=>'Jimmy'],
+	['name'=>'JameGold'],
+];
 
-$smarty->debug = true;  //the debug enable
-$smarty->setTemplateDir($template_dir);
-$smarty->setCompileDir($compie_dir);
-$smarty->assign('name', 'Nezimi');
-$smarty->assign('title', 'HelloWorld');
-$smarty->assign('code', 1);
-$smarty->assign('data', $data);
-$smarty->display('index.html');
+$template = new Template($config);
+
+$template->assign('name', 'Nezimi');
+$template->assign('title', 'HelloWorld');
+$template->assign('code', 1);
+$template->assign('data', $data);
+$result = $template->fetch('index');
+echo $result;
 ```
 
 

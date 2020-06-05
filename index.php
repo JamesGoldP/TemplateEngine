@@ -1,13 +1,11 @@
 <?php
+namespace zero;
 include './Loader.php';
 spl_autoload_register('Loader::_autoload');
 
-require './vendor/autoload.php';
-
-use Nezimi\MySmarty; 
-
-$template_dir = __DIR__ . DIRECTORY_SEPARATOR .'templates' . DIRECTORY_SEPARATOR;
-$compie_dir   = __DIR__ . DIRECTORY_SEPARATOR .'templates_c' . DIRECTORY_SEPARATOR;
+$config = require './config/template.php';
+$config['view_path'] = './templates/';
+$config['cache_path'] = './templates_c/';
 
 $data = [
 	['name'=>'Nezimi'],
@@ -15,11 +13,11 @@ $data = [
 	['name'=>'JameGold'],
 ];
 
-$smarty = new MySmarty();
+$template = new Template($config);
 
-$smarty->debug = true;  //the debug enable
-$smarty->assign('name', 'Nezimi');
-$smarty->assign('title', 'HelloWorld');
-$smarty->assign('code', 1);
-$smarty->assign('data', $data);
-$smarty->display('index.html');
+$template->assign('name', 'Nezimi');
+$template->assign('title', 'HelloWorld');
+$template->assign('code', 1);
+$template->assign('data', $data);
+$result = $template->fetch('index');
+echo $result;

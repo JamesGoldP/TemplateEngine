@@ -1,5 +1,5 @@
 <?php
-namespace Nezimi\driver;
+namespace zero\driver;
 
 use Exception;
 

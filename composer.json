@@ -1,7 +1,7 @@
 {
-    "name": "nezimi/my-template",
+    "name": "zero/zero-template",
     "minimum-stability": "dev",
-    "description": "A template engine which imitate smarty for php",
+    "description": "studying for think-template",
     "type":"library",
     "require": {
 		"php": ">=5.4"
@@ -15,7 +15,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Nezimi\\": "src/"
+            "zero\\": "src/"
         }
     },
     "require-dev": {
