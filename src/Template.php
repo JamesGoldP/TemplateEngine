@@ -40,17 +40,15 @@ class Template
 	 */
 	protected $storage;
 
-	public  function __construct($templateDir, $compileDir, array $config = [])
+	public  function __construct(array $config = [])
 	{
-		$this->templateDir = $templateDir;
-		$this->compileDir  = $compileDir;
-		$this->leftDelimiter = preg_quote($config['left_delimiter'], '/');
-		$this->rightDelimiter = preg_quote($config['right_delimiter'], '/');
 		$this->config = $config;
+		$this->leftDelimiter = preg_quote($config['tpl_begin'], '/');
+		$this->rightDelimiter = preg_quote($config['tpl_end'], '/');
 
 		//初始化模板编译存储器
 		$type = $this->config['compile_type'] ?: 'file';
-		$class = false !== strpos('\\', $type) ? $type : 'Nezimi\\driver\\' . ucwords($type);
+		$class = false !== strpos('\\', $type) ? $type : 'zero\\driver\\' . ucwords($type);
 		$this->storage = new $class;
 	}
 
@@ -61,12 +59,12 @@ class Template
 
 	public function fetch(string $file)
 	{
-		$this->templateFile = $this->templateDir . $file . '.' .$this->config['template_suffix'];
+		$this->templateFile = $this->config['view_path'] . $file . '.' .$this->config['view_suffix'];
 		if( !file_exists($this->templateFile) ){
 			return false;
 		}
 		$content = $this->read($this->templateFile);
-		$this->compileFile = $this->compileDir . md5($this->templateFile). '.' .$this->config['compile_extension'];
+		$this->compileFile = $this->config['cache_path'] . md5($this->templateFile). '.' .$this->config['compile_extension'];
 
 		//如果不是调试的话,意思实时写入文件
 		if( !$this->debug ){
@@ -158,7 +156,7 @@ class Template
 	{
 		$regex = $this->getRegex('include');
 		$content = preg_replace_callback($regex, function ($match) {
-		            return file_get_contents($this->templateDir.$match[1]. '.' .$this->config['template_suffix']);
+		            return file_get_contents($this->config['view_path'].$match[1]. '.' .$this->config['view_suffix']);
 				}, $content);
 	}
 
@@ -245,7 +243,7 @@ class Template
 		if( false !== strpos($tagLib, '\\') ){
 			$className = $tagLib;
 		} else {
-			$className =  '\\Nezimi\\taglib\\'.ucwords($tagLib);
+			$className =  '\\zero\\taglib\\'.ucwords($tagLib);
 		}
 		$tLib = new $className($this);
 		$tLib->parseTag($content);

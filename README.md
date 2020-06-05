@@ -6,10 +6,10 @@ The studying template engine for think-template.
 
 ## Installation
 
-Use [composer](http://getcomposer.org) to install zero/zero-template in your project:
+Use [composer](http://getcomposer.org) to install zero-systems/zero-template in your project:
 
 ```
-composer require zero/zero-template
+composer require zero-systems/zero-template
 ```
 
 ## Usage

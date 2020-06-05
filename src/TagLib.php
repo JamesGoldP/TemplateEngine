@@ -98,7 +98,7 @@ class TagLib
     public function parseAttr(string $str, string $name): array
     {
         if( $this->tags[$name]['expression'] ){
-            $start = strlen($this->tpl->config['left_delimiter'].$name);
+            $start = strlen($this->tpl->config['tpl_begin'].$name);
             $end   = strlen($this->tpl->config['right_delimiter']);
             $expression = substr($str, $start, -$end);
             //清楚{else /}的/
@@ -119,7 +119,7 @@ class TagLib
 
     protected function getRegex($tags, bool $close): string
     {
-        list($begin, $end) = [$this->tpl->config['left_delimiter'], $this->tpl->config['right_delimiter']];
+        list($begin, $end) = [$this->tpl->config['tpl_begin'], $this->tpl->config['right_delimiter']];
         $single = 1 == strlen( ltrim($begin, '\\')) && 1 == strlen( ltrim($end, '\\')) ? true : false;
         $tagName = is_array($tags) ? implode('|', $tags) : $tags;
 
